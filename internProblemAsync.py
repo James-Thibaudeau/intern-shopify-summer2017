@@ -22,28 +22,29 @@ limit = 50
 fields = {'total_price': 0, 'total_price_usd':0}
 tasks = []
 
+#calculates number of pages of data
 def get_num_pages(limit, count):
 	return ceil(count/limit)
-
+#sums array of data
 def sum_data(data, field):
 	return sum((float(item[field])) for item in data)
-
+#Only sync function, need to get count before the async calls
 def get_count(url, field):
 	URLData = urllib.request.urlopen(url)
 	read = URLData.read()
 	data = json.loads(read.decode('utf-8'))
 	return data[field]
-
+#async call to get json data from API
 async def get_order_data(client, url, fields, page_name):
 	async with client.get(url) as response:
 		return await response.json()
-
+#async callback once data is fetched
 async def sum_order_data(client, url, fields, page_name):
 	data = await get_order_data(client, url, fields, page_name)
 	
 	for field in fields:
 		fields[field] += sum_data(data[page_name], field)
-
+#function to generate a task for each page of data
 def task_gen(client, pages, url, page_name, fields):
 	task_list = []
 	
@@ -53,7 +54,7 @@ def task_gen(client, pages, url, page_name, fields):
 		task_list.append(task)
 		
 	return task_list
-
+#display total revenue
 def display_totals(totals):
 	print("Total Revenue: $" + "%0.2f" % totals['total_price'])
 	print("Total Revenue(USD): $" + "%0.2f" % totals['total_price_usd'])
